@@ -1,0 +1,52 @@
+---
+- name: Copy config files and binary
+  hosts: servers
+  become: yes  # To execute tasks with superuser privileges if required
+
+  tasks:
+    - name: Create directory
+      file:
+        path: ~/conf/
+        state: directory
+      become_user: "{{ ansible_user }}"
+
+    - name: Copy config.yml to home directory
+      copy:
+        src: config.yml
+        dest: ~/conf/config.yml
+      become_user: "{{ ansible_user }}" 
+
+    - name: Copy s3proxy.service to systemd location
+      copy:
+        src: s3proxy.service 
+        dest: /etc/systemd/system/s3proxy.service
+
+    - name: Copy s3-proxy binary to home directory
+      copy:
+        src: ~/vcs/s3-overlay-proxy/bin/overlay-server-linux-amd64  # Path to your local s3-proxy binary
+        dest: ~/overlay-server    # Destination path on the target host's home directory
+        mode: '0755'
+
+      become_user: "{{ ansible_user }}"
+
+    - name: Create AWS cli directory
+      file:
+        path: ~/.aws/
+        state: directory
+      become_user: "{{ ansible_user }}"
+
+    - name: Generate AWS config from template
+      template:
+        src: aws_config.j2
+        dest: ~/.aws/config
+      become_user: "{{ ansible_user }}"
+
+    - name: Daemon-reload systemd
+      systemd_service:
+        name: systemd
+        daemon_reload: true
+
+    - name: Start s3proxy
+      systemd_service:
+        name: s3proxy
+        state: restarted

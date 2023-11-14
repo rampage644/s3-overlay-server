@@ -1,0 +1,13 @@
+[Unit]
+Description=S3 proxy server
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=10s
+Environment=AWS_REGION=us-east-2
+WorkingDirectory=/home/ec2-user
+ExecStart=/home/ec2-user/overlay-server -http.addr=:80
+
+[Install]
+WantedBy=multi-user.target
